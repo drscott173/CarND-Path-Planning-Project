@@ -20,9 +20,9 @@
 #include "spline.h"
 
 #define MAX_SPEED 49.5
-#define MAX_ACCEL 0.4
-#define NUM_POINTS 30
-#define LANE_CHANGE 150
+#define MAX_ACCEL 0.4    // max accel in m/s^2
+#define NUM_POINTS 30    // length of our trajectory in 0.02 increments
+#define LANE_CHANGE 150  // 3 seconds
 
 using namespace std;
 using Eigen::MatrixXd;
@@ -309,6 +309,7 @@ int main() {
                   
                   double ref_x_prev = previous_path_x[prev_size-2];
                   double ref_y_prev = previous_path_y[prev_size-2];
+
                   ref_yaw = atan2(ref_y-ref_y_prev, ref_x-ref_x_prev);
 
                   ptsx.push_back(ref_x_prev);
@@ -337,7 +338,7 @@ int main() {
 
                 // We scan the sensor fusion data and create three vectors,
                 // one each for the lane on the left and right of us.  These
-                // vectors contain the identifiers of cars +/- 30m from us.
+                // vectors contain the identifiers of cars +/- two second fule from us.
                 // An empty vector denotes an "open" lane.
                 vector<double> c_left;
                 vector<double> c_right;
@@ -364,26 +365,31 @@ int main() {
                   double id_other = car[0];
                   double s_other = car[5];
                   double d_other = car[6];
+                  double two_second_rule = 2.0*my_v;
                   double v_other = sqrt(car[3]*car[3]+car[4]*car[4]);
+                  double half_second_rule = 0.5*max(my_v,v_other);
                   vector<double> my_s = {car_s, car_s+NUM_POINTS*0.02*car_speed/2.24};
                   vector<double> other_s = {s_other, s_other+NUM_POINTS*0.02*v_other};
                   bool in_lane = ((d_other > (2+4*lane-2) && (d_other < (2+4*lane+2))));
                   bool on_left = ((d_other > (2+4*(lane-1)-2)) && (d_other < (2+4*(lane-1)+2)));
                   bool on_right = ((d_other > (2+4*(lane+1)-2)) && (d_other < (2+4*(lane+1)+2)));
-                  bool is_close = overlaps(my_s, other_s, 30.0);
+                  bool is_close = overlaps(my_s, other_s, two_second_rule);
+                  bool is_tight = overlaps(my_s, other_s, half_second_rule);
                   bool ahead = (s_other > car_s);
                   
                   if (in_lane && ahead && is_close) {
                     crowded = true;
                     c_lane.push_back(i);
+                    // slow down if we're too close!
+                    if (s_other-car_s < two_second_rule) v_other = my_v-MAX_ACCEL/2.24;
                     v_lane = min(v_lane,v_other);
                   }
-                  else if (on_left && is_close) {
+                  else if (on_left && ((ahead && is_close) || (!ahead && is_tight))) {
                     crowded = true;
                     c_left.push_back(i);
                     v_left = min(v_left,v_other);
                   }
-                  else if (on_right && is_close) {
+                  else if (on_right && ((ahead && is_close) || (!ahead && is_tight))) {
                     crowded = true;
                     c_right.push_back(i);
                     v_right = min(v_right,v_other);
@@ -393,6 +399,11 @@ int main() {
                 // choose lane
                 if (crowded) {
                   if (c_lane.size() > 0) {  // something is in front of us
+
+                    // TODO: handle forced lane change
+                    // due to impending collision.  We
+                    // have been assuming we can brake to
+                    // avoid smacking the person in front of us.
 
                     // pass on left if free
                     if (c_left.size() < 1 && lane > 0) {
@@ -435,9 +446,9 @@ int main() {
                   if (c_lane.size() > 0 && (my_v > v_lane)) {
                     // drop our speed until we can switch lanes
                     going_slow = true;
-                    //cout << "Braking " << v_lane << " vs " << ref_vel << endl; // be smarter here
-                    //cout << "...dv " << dv << endl;
                     double dv = max((v_lane - my_v)*2.24, -MAX_ACCEL);
+                    cout << "Braking other " << v_lane << " us " << my_v << " tgt " << ref_vel  << endl; // be smarter here
+                    cout << "...dv " << dv << endl;
                     ref_vel += dv;
                     changes = true;
                   }
@@ -447,12 +458,12 @@ int main() {
                     changes = true;
                   }
                 }
-                else if (ref_vel < MAX_SPEED && !going_slow) {
+                else if ((ref_vel < MAX_SPEED) && !going_slow) {
                   ref_vel += MAX_ACCEL;
                   changes = true;
-                  //cout << "Accelerating " << ref_vel << endl;
+                  cout << "Accelerating " << ref_vel << endl;
                 }
-                ref_vel = fmin(MAX_SPEED, ref_vel);
+                ref_vel = fmax(fmin(MAX_SPEED, ref_vel),0);
 
                 if (crowded) {
                   if (!was_crowded) {
@@ -481,9 +492,9 @@ int main() {
                 }
 
                 // create control points for the s spline, easing into the next lane
-                // over 240 meters.
-                for (int i=30; i <= LANE_CHANGE; i += 15) {  // change lanes in 3 seconds 3x50x0.02
-                  double d_lane = lane+(target_lane-lane)*(i-30.0)/LANE_CHANGE;
+                // over LANE_CHANGE updates
+                for (int i=30; i <= LANE_CHANGE; i += 15) {
+                  double d_lane = lane+(target_lane-lane)*(i-30.0)/(LANE_CHANGE-30);
                   vector<double> wp = getXY(ref_sd[0]+i,(2+4*d_lane),map_waypoints_s,map_waypoints_x,map_waypoints_y);
                   ptsx.push_back(wp[0]);
                   ptsy.push_back(wp[1]);
@@ -511,6 +522,7 @@ int main() {
           	vector<double> next_x_vals;
           	vector<double> next_y_vals;
 
+                // extend previous path
                 for (int i=0; i < prev_size; i++) {
                   next_x_vals.push_back(previous_path_x[i]);
                   next_y_vals.push_back(previous_path_y[i]);
@@ -525,6 +537,8 @@ int main() {
 
                 // add new spline points at the end
                 //cout << "Adding " << (NUM_POINTS-prev_size) << " points " << " dx=" << round((target_x/N)*100) << endl;
+                vector<double> merge_x;
+                vector<double> merge_y;
                 for (int i=0; i < NUM_POINTS-prev_size; i++) {
                   double x_point = x_add_on + target_x/N;
                   double y_point = s(x_point);
