@@ -16,8 +16,8 @@ Start it up!
 
 ## Valid Trajectories
 
-You can see evidence of driving a full 4.32 miles on the simulator by [viewing]
-(https://www.youtube.com/watch?v=GL1bQZy1vgM) the following on YouTube:
+You can see evidence of driving a full 4.32 miles on the simulator by
+[viewing](https://www.youtube.com/watch?v=GL1bQZy1vgM) the following on YouTube:
 
 ![YouTube Video](https://img.youtube.com/vi/GL1bQZy1vgM/hqdefault.jpg)
 
