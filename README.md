@@ -60,20 +60,21 @@ This approach gradually tweaks the trajectory given heuristic updates.
 
 ## Reflection
 
-I cranked the max speed to 150mph fo testing.  This quickly shows the 
+I cranked the max speed to 150mph for testing.  This quickly shows the 
 heuristic limitations. The car gets most
-confused when it cannot slow down sufficiently from 150mph to avoid hitting a slow
-car that entered its lane.  I suspect this could happen in the slower speed
+confused when it cannot slow down sufficiently to avoid collisions.
+I suspect this could happen in the slower speed
 version, should a car suddenly cut us off.  The trajectories get even more
 complex in heavier traffic.
 
-A more sophisticated approach would create a local grid around the car's
+A better approach would create a local grid around the car's
 current position.  The grid would start at the current car position and be as
 long in s as one could travel at max speed, as wide in d as the full road.  We'd
 divide the grid into cells, choosing the finest granularity we could physically
 navigate in 0.02 seconds while still being computationally tractable.
 
-Next, I'd use hybrid A* search to create a piece-wise path that succesfully
+Next, I'd use 
+[hybrid A* search](http://blog.habrador.com/2015/11/explaining-hybrid-star-pathfinding.html) to create a piece-wise path that succesfully
 follows each of the possible states, starting k steps into the previous
 path returned by the simulator. k corresponds to actuator delay, with a minimum
 of 2 to ensure smooth curve transition.  
