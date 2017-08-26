@@ -14,9 +14,11 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
 
 include_directories(/usr/local/include)
 include_directories(/usr/local/opt/openssl/include)
+include_directories(/Users/scottpenberthy/anaconda3/include)
+include_directories(/Users/scottpenberthy/homebrew/Cellar/libuv/1.13.1/include)
 link_directories(/usr/local/lib)
-link_directories(/usr/local/opt/openssl/lib)
-link_directories(/usr/local/Cellar/libuv/1.11.0/lib)
+link_directories(/Users/scottpenberthy/homebrew/Cellar/libuv/1.13.1/lib)
+link_directories(/Users/scottpenberthy/homebrew/Cellar/openssl/1.0.2k/lib)
 
 endif(${CMAKE_SYSTEM_NAME} MATCHES "Darwin") 
 
