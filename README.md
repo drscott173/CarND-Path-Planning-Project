@@ -110,5 +110,4 @@ milliseconds in the future, as uncertainty compounds quickly.
 This would be fun.  Its far more than needed to pass the test.  I believe
 in writing as little code as possible, then iterating.  :-)
 
-Scott Penberthy
-August, 2017
+Scott Penberthy, August, 2017
