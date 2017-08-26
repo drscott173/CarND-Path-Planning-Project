@@ -1,8 +1,6 @@
 # CarND-Path-Planning-Project
 Self-Driving Car Engineer Nanodegree Program
    
-### Project Submission
-
 ## Compilation
 First, download the Term3 Simulator which contains
 the Path Planning Project from the
@@ -41,7 +39,7 @@ The video shows that the car successfully changes lanes, prefers to stay in
 the middle lane for maneuverability, slows down for the cars in front,
 and accelerates to the desired max speed when possible.
 
-## Trajectories
+## Approach
 
 We follow the "hints" video for calculating trajectories.  At the beginning,
 we choose our current lane and find waypoints forward three seconds into
