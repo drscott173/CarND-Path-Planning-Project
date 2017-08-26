@@ -4,7 +4,10 @@ Self-Driving Car Engineer Nanodegree Program
 ### Project Submission
 
 ## Compilation
-First, download the Term3 Simulator which contains the Path Planning Project from the [releases tab (https://github.com/udacity/self-driving-car-sim/releases).  Start it up.
+First, download the Term3 Simulator which contains
+the Path Planning Project from the
+[releases] tab (https://github.com/udacity/self-driving-car-sim/releases).
+Start it up!
 
 1. Clone this repo.
 2. Make a build directory: `mkdir build && cd build`
@@ -13,30 +16,26 @@ First, download the Term3 Simulator which contains the Path Planning Project fro
 
 ## Valid Trajectories
 
-You can see evidence of driving a full 4.32 miles on the simulator by [viewing
-the following](https://www.youtube.com/watch?v=GL1bQZy1vgM) on YouTube:
+You can see evidence of driving a full 4.32 miles on the simulator by [viewing]
+(https://www.youtube.com/watch?v=GL1bQZy1vgM) the following on YouTube:
 
 ![YouTube Video](https://img.youtube.com/vi/GL1bQZy1vgM/hqdefault.jpg)
 
-We maintain the speed limit by choosing a target velocity of 49.5 MPH to stay
-within the 50 MPH limit.  We set the maximum acceleration to 4 m/s^2. We minimize
+We maintain the speed limit by choosing a target velocity of 49.5mph to stay
+within the 50mph limit.  We set the maximum acceleration to 0.4 m/s^2. We minimize
 jerk by adding a few points to the previously planned path each time, then smoothing
-the result with a spline.  We plan lane changes out for 3 seconds (150 iterations)
+the result with a spline.  We plan lane changes to occur in 3 seconds (150 iterations)
 by interpolating waypoints from the current lane to the future lane and fitting
 a spline.
 
-We avoid collisions bby looking at cars on the 
+We avoid collisions by looking at cars on the 
 left, right and in front of us whose path would potentially cross ours in the
 next NUM_POINTS/50 seconds.  NUM_POINTS is the number of points on our
-trajectory that we send to the simulator.  This conservative approach works
-for this pedagogical example.
+trajectory that we send to the simulator.
 
 We stay in our lane until the
 coast is clear on the left or right.  We also reduce our speed to match the
-car in front of us, slowing down as need be if we're closer than 2 seconds
-apart at our current speed.  We
-stay in our lane by planning a path to the center of a lane, starting at
-2 meters out, then shifting over 4 meters for every lane.
+car in front of us, using the "2 second rule" to adjust our distance.
 
 The video shows that the car successfully changes lanes, prefers to stay in
 the middle lane for maneuverability, slows down for the cars in front,
@@ -61,8 +60,8 @@ This approach gradually tweaks the trajectory given heuristic updates.
 
 ## Reflection
 
-I cranked the max speed to a Porsche 911 at 150mph.  This quickly shows the flaws
-in these heuristics that pass the simple project criteria.  The car gets most
+I cranked the max speed to 150mph fo testing.  This quickly shows the 
+heuristic limitations. The car gets most
 confused when it cannot slow down sufficiently from 150mph to avoid hitting a slow
 car that entered its lane.  I suspect this could happen in the slower speed
 version, should a car suddenly cut us off.  The trajectories get even more
@@ -71,13 +70,17 @@ complex in heavier traffic.
 A more sophisticated approach would create a local grid around the car's
 current position.  The grid would start at the current car position and be as
 long in s as one could travel at max speed, as wide in d as the full road.  We'd
-divide the grid into cells, choosing the finest granularity we could navigate
-while still being computationally tractable.
+divide the grid into cells, choosing the finest granularity we could physically
+navigate in 0.02 seconds while still being computationally tractable.
 
 Next, I'd use hybrid A* search to create a piece-wise path that succesfully
 follows each of the possible states, starting k steps into the previous
-path returned by the simulator.  k corresponds to actuator delay, seen here
-to be about 0.04 seconds or 2 steps.
+path returned by the simulator. k corresponds to actuator delay, with a minimum
+of 2 to ensure smooth curve transition.  
+
+We would have a cube of grids, one Frenet grid
+for each incremental time step. Grid cells of open road are "free," whereas
+grid cells of other cars would be "occupied."
 
 These "states" of our care are currently baked into 
 the heuristic as conditional statements:
@@ -97,7 +100,15 @@ This path with our least cost would be my initial trajectory.  I'd smooth
 this path with a spline. Finally, I'd attach this new, revised trajectory
 to the head of the previous plan for a nice, smooth transition.
 
-This would be fun.  Its more than needed to pass the test.  I believe
+One last complexity would model uncertainty for obstacles (cars, pedestrians,
+etc) as we see in Kalman filters.  These distributions capture possible
+states and paths forward. A cell would then be blocked a given
+uncertainty, which we could perhaps
+model by adjusting the collision cost (0-1).
+The good news is we may only project a few hundred
+milliseconds in the future, as uncertainty compounds quickly.
+
+This would be fun.  Its far more than needed to pass the test.  I believe
 in writing as little code as possible, then iterating.  :-)
 
 ### Simulator.
